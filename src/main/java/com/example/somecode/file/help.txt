@@ -1,0 +1,49 @@
+/**
+ * windows中是单右斜杠
+ * Linux中是单左斜杠
+ * 代码中字符串上是双右斜杠
+ * 代码中实际运行时，是单右斜杠
+ * ==代码中单左斜杠也可以，在File实例化时会转为单右斜杠
+ * postman中是双右斜杠
+ */
+
+// 系统文件夹符号
+String separator = File.separator;
+
+// 获取运行服务器中（如Tomcat）的临时目录路径
+private static final String PATH_SYSTEM_TEMP = System.getProperty("java.io.tmpdir");
+
+// 获取当前服务的target/classes文件路径
+private static final String PATH_PROJECT_TARGET = Thread.currentThread().getContextClassLoader().getResource("").getPath();
+
+
+1.File类
+
+
+2.path类
+
+
+3.Files类
+Files.copy()
+Files.delete()
+Files.deleteIfExists()
+Files.newOutputStream()
+
+
+4.FileUtils类
+<groupId>commons-io</groupId>
+<artifactId>commons-io</artifactId>
+
+FileUtils.copyDirectory(File srcDir, File destDir)
+FileUtils.copyFile(File srcFile, File destFile)
+FileUtils.moveDirectory(File srcDir, File destDir)
+FileUtils.moveFile(File srcFile, File destFile)
+FileUtils.deleteDirectory(File directory)
+FileUtils.cleanDirectory(File directory)
+FileUtils.openInputStream(File file)
+FileUtils.openOutputStream(File file)
+FileUtils.readFileToByteArray(File file)
+FileUtils.readFileToString(File file, Charset encoding)
+
+
+

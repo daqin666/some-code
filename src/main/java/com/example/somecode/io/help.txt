@@ -38,3 +38,13 @@
 System.in: 标准输入流
 System.out: 标准输出流
 System.err: 标准错误
+
+5.IOUtils类
+IOUtils.read(InputStream input, byte[] buffer)
+IOUtils.copy(InputStream input, OutputStream output)
+IOUtils.toInputStream(String input, String encoding)
+IOUtils.toString(Reader input)
+IOUtils.buffer(InputStream input)
+IOUtils.toByteArray(InputStream input)
+IOUtils.write(byte[] data, OutputStream output)
+IOUtils.close(URLConnection conn)

@@ -1,39 +1,20 @@
-package com.example.somecode.io;
+package com.example.somecode.file;
 
-import com.example.somecode.io.streams.StreamUtil;
+import com.example.somecode.io.CustomFileException;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.FileUtils;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.*;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
 @Slf4j
 public class FileCustomUtil {
 
-    /**
-     * windows中是单右斜杠
-     * Linux中是单左斜杠
-     * 代码中字符串上是双右斜杠
-     * 代码中实际运行时，是单右斜杠
-     * ==代码中单左斜杠也可以，在File实例化时会转为单右斜杠
-     * postman中是双右斜杠
-     */
-
-    public static void main(String[] args) {
-//        String path = "D:\\gitRepository\\some-code\\src\\main\\java\\com\\example\\somecode\\io";
-//        String path = "D:/gitRepository/some-code/src/main/java/com/example/somecode/io";
-        String path = "D:\\gitRepository\\some-code\\src\\main\\java\\com\\example\\somecode\\test";
-        String targetPath = "D:\\gitRepository\\some-code\\src\\main\\java\\com\\example\\somecode\\io\\test.txt";
-        List<String> strings = listAllFilePath(path);
-        for (String string : strings) {
-//            String s = IOCustomUtil.streamRead(string);
-//            System.out.println(s);
-            StreamUtil.streamIO(string, targetPath);
-        }
-
-    }
 
     /**
      * 递归查找某一路径下的所有文件路径
@@ -64,6 +45,77 @@ public class FileCustomUtil {
         }
 
         return filePathList;
+    }
+
+    /**
+     * 解压zip文件
+     * @param srcFile srcFile
+     * @param destDirPath destDirPath
+     * @return Boolean
+     * @throws RuntimeException --
+     */
+    public Boolean unZip(File srcFile, String destDirPath) throws RuntimeException {
+        System.out.println("unZip destDirPath :" + destDirPath);
+        long start = System.currentTimeMillis();
+        // 判断源文件是否存在
+        if (!srcFile.exists()) {
+            throw new RuntimeException(srcFile.getPath() + "所指文件不存在");
+        }
+        // 开始解压
+        ZipFile zipFile = null;
+        try {
+            FileUtils.cleanDirectory(new File(destDirPath));
+            zipFile = new ZipFile(srcFile);
+            Enumeration<?> entries = zipFile.entries();
+            while (entries.hasMoreElements()) {
+                ZipEntry entry = (ZipEntry) entries.nextElement();
+                System.out.println("解压" + entry.getName());
+
+                // 如果是文件夹，就创建个文件夹
+                if (entry.isDirectory()) {
+                    String dirPath = destDirPath + "/" + entry.getName();
+                    File dir = new File(dirPath);
+                    dir.mkdirs();
+                } else {
+                    // 如果是文件，就先创建一个文件，然后用io流把内容copy过去
+                    File targetFile = new File(destDirPath + "/" + entry.getName());
+                    // 保证这个文件的父文件夹必须要存在
+                    if(!targetFile.getParentFile().exists()){
+                        targetFile.getParentFile().mkdirs();
+
+                    }
+                    targetFile.createNewFile();
+
+                    // 将压缩文件内容写入到这个文件中
+                    InputStream is = zipFile.getInputStream(entry);
+                    FileOutputStream fos = new FileOutputStream(targetFile);
+                    int len;
+                    byte[] buf = new byte[1024];
+
+                    while ((len = is.read(buf)) != -1) {
+                        fos.write(buf, 0, len);
+
+                    }
+                    // 关流顺序，先打开的后关闭
+                    fos.close();
+                    is.close();
+                }
+            }
+            long end = System.currentTimeMillis();
+            System.out.println("解压完成，耗时：" + (end - start) +" ms");
+        } catch (Exception e) {
+            throw new RuntimeException("unzip error from ZipUtils", e);
+        } finally {
+            if(zipFile != null){
+                try {
+                    zipFile.close();
+                } catch (IOException e) {
+                    log.error("unZip close error...", e);
+                }
+            }
+        }
+
+        return Boolean.TRUE;
     }
 
     /**
