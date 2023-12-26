@@ -1,0 +1,77 @@
+方法二：
+使用@WebFilter，@WebFilter时Servlet3.0的一个注解，用于标注一个Filter，Spring Boot也是支持这种方式的，只需要在自定义的Filter上标注该注解即可。
+
+@WebFilter(filterName = "filter_one", urlPatterns = {"/*"})
+public class WeFilter implements Filter {
+
+    @Override
+    public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
+        // 继续执行下一个 filter
+        filterChain.doFilter(servletRequest, servletResponse);
+    }
+}
+
+要想@WebFilter注解生效，需要在配置类上标注另外一个注解@ServletComponentScan用于扫描使其生效。
+
+@SpringBootApplication
+@ServletComponentScan(value = {"com.example.demo.filter"})
+public class DemoApplication {
+    public static void main(String[] args) {
+        SpringApplication.run(DemoApplication.class, args);
+    }
+}
+
+
+运用例子：
+对于前后端分离的项目来说跨越是一个难题，对于跨越问题有很多解决方案，比如JSONP，网关支持等。用过滤器也可以解决跨越问题，原理很简单，只需要在请求头中添加相应支持跨越的内容即可。
+@Component
+public class WeFilter implements Filter {
+
+    @Override
+    public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
+        HttpServletResponse response = (HttpServletResponse) servletResponse;
+        response.setHeader("Access-Control-Allow-Origin", "*");
+        response.setHeader("Access-Control-Allow-Credentials", "true");
+        response.setHeader("Access-Control-Allow-Methods", "POST, GET, OPTIONS, DELETE");
+        response.setHeader("Access-Control-Max-Age", "3600");
+        response.setHeader("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+        // 继续执行下一个 filter
+        filterChain.doFilter(servletRequest, servletResponse);
+    }
+}
+
+Access-Control-Allow-Origin是该字段表示，服务端接收哪些来源的域的请求
+Access-Control-Allow-Credentials否是否可以向服务端发送Cookie，默认是 false
+Access-Control-Expose-Headers否可以向请求额外暴露的响应头
+Access-Control-Max-Age用来指定本次预检请求的有效期，单位为秒，，在此期间不用发出另一条预检请求。
+Access-Control-Allow-Headers头的作用是允许服务器指定哪些自定义请求头可以被浏览器访问。通常情况下，
+浏览器只允许访问一些常见的请求头，如Content-Type和Authorization。但是，如果 Web 应用程序需要在请求头中使用自定义字段，
+则需要在服务器端配置Access-Control-Allow-Headers来允许浏览器访问它们。
+对于 application/x-www-form-urlencoded、multipart/form-data 或 text/plain 三种 MIME 类型（不包括参数）），它们始终是被支持的，不需要在这个首部特意列出
+
+
+
+@Configuration
+public class FilterConfig {
+
+    @Autowired
+    private WeFilter weFilter;
+
+    @Bean
+    public FilterRegistrationBean injectFilterOne() {
+        FilterRegistrationBean<Filter> registrationBean = new FilterRegistrationBean<>();
+        registrationBean.setFilter(weFilter);
+        registrationBean.addUrlPatterns("/*");
+        registrationBean.setName("filter_one");
+        // 优先级
+        registrationBean.setOrder(Ordered.HIGHEST_PRECEDENCE);
+        return registrationBean;
+    }
+}
+
+拦截器和过滤器的区别
+拦截器是基于Java的反射机制，而过滤器是基于函数回调；
+拦截器不依赖servlet容器，过滤器依赖servlet容器；
+拦截器只能对action请求起作用，而过滤器则可以对几乎所有的请求起作用；
+拦截器可以访问action上下文、值栈里的对象，过滤器不能访问；
+在action生命周期中，拦截器可以多次被调用，过滤器只能在容器初始化时被调用一次。

@@ -1,0 +1,22 @@
+ 元注解用于修饰其他的注解(纪委：管干部的干部)
+1.@Retention：定义注解的保留策略
+      @Retention(RetentionPolicy.SOURCE)             //注解仅存在于源码中，在class字节码文件中不包含
+      @Retention(RetentionPolicy.CLASS)              //默认的保留策略，注解会在class字节码文件中存在，但运行时无法获得，
+      @Retention(RetentionPolicy.RUNTIME)            //注解会在class字节码文件中存在，在运行时可以通过反射获取到
+
+2.@Target：指定被修饰的Annotation可以放置的位置(被修饰的目标)
+      @Target(ElementType.TYPE)                      //接口、类
+      @Target(ElementType.FIELD)                     //属性
+      @Target(ElementType.METHOD)                    //方法
+      @Target(ElementType.PARAMETER)                 //方法参数
+      @Target(ElementType.CONSTRUCTOR)               //构造函数
+      @Target(ElementType.LOCAL_VARIABLE)            //局部变量
+      @Target(ElementType.ANNOTATION_TYPE)           //注解
+      @Target(ElementType.PACKAGE)                   //包
+
+      注：可以指定多个位置，例如：
+@Target({ElementType.METHOD, ElementType.TYPE})，也就是此注解可以在方法和类上面使用
+
+3.@Inherited：指定被修饰的Annotation将具有继承性
+
+4.@Documented：指定被修饰的该Annotation可以被javadoc工具提取成文档.
