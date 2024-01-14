@@ -10,14 +10,6 @@ import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
 
-/**
- * CommandLineRunner 和 ApplicationRunner这俩个类的执行时机都是一样的，都是在SpringBoot启动的倒数第二步开始执行。
- * 倒数第二步基本上等于SpringBoot已经启动完毕了。可以去看SpringApplication.run(Application.class, args);run方法的源码。
- *
- * CommandLineRunner 和 ApplicationRunner这俩个类谁先执行？
- * 同等优先级的情况下ApplicationRunner类先执行。
- * 不同等优先级的情况下：看@Order(1)的值，@Order(1)的值越小，越先执行。
- */
 //@Order(Ordered.HIGHEST_PRECEDENCE)
 @Order(2)
 @Component
