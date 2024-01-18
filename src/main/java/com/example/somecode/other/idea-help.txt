@@ -1,0 +1,11 @@
+1.开启service窗口
+view -> Tool windows -> services
+
+2.动态启动服务多实例
+方式一：
+    直接复制服务，然后在启动配置中配置vm参数
+    copy configuration -> vm options -> -Dserver.port=8081
+方式二：
+    修改application配置文件端口值为占位符方式，并设置默认值，然后复制服务，配置vm启动参数
+    1. server.port= ${port:8080}
+    2. copy configuration -> vm options -> -Dport=8081

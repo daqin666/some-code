@@ -1,0 +1,87 @@
+1.依赖
+<-- ui选择一 -->
+<dependency>
+    <groupId>io.springfox</groupId>
+    <artifactId>springfox-swagger-ui</artifactId>
+    <version>2.9.2</version>
+</dependency>
+
+<-- ui选择二 -->
+<dependency>
+    <groupId>com.github.xiaoymin</groupId>
+    <artifactId>swagger-bootstrap-ui</artifactId>
+    <version>1.9.6</version>
+</dependency>
+
+<dependency>
+    <groupId>io.springfox</groupId>
+    <artifactId>springfox-swagger2</artifactId>
+    <version>2.9.2</version>
+</dependency>
+
+2.配置类+注解
+@EnableSwagger2
+
+3.controller类相关注解
+@Api：用在请求的类上，表示对类的说明（不配置默认是按类名驼峰变下划线显示）
+    value：该参数没什么意义，在UI界面上也看到，所以不需要配置"
+    tags：说明该类的作用，可以在UI界面上看到的注解
+    description：对api资源的描述
+    basePath：基本路径
+    position：如果配置多个Api 想改变显示的顺序位置
+    produces：如 “application/json, application/xml”
+    consumes：如 “application/json, application/xml”
+    protocols：协议类型，如: http, https, ws, wss.
+    authorizations：高级特性认证时配置
+    hidden：配置为true ，将在文档中隐藏
+@ApiOperation：用在请求的方法上，说明方法的用途、作用
+    value：说明方法的用途、作用
+    tags：如果设置这个值、value的值会被覆盖
+    notes：方法的备注说明
+    description：对api资源的描述
+@ApiImplicitParams：用在请求的方法上，表示一组参数说明
+    @ApiImplicitParam：用在@ApiImplicitParams注解中，指定一个请求参数的各个方面
+        name：参数名
+        value：参数的汉字说明、解释
+        required：参数是否必须传
+        paramType：参数放在哪个地方
+            · header --> 请求参数的获取：@RequestHeader
+            · query --> 请求参数的获取：@RequestParam
+            · path（用于restful接口）--> 请求参数的获取：@PathVariable
+            · div（不常用）
+            · form（不常用）
+        dataType：参数类型，默认String，其它值dataType="Integer"
+        defaultValue：参数的默认值
+@ApiParam() 用于方法，参数，字段说明；表示对参数的添加元数据（说明或是否必填等）
+    name：参数名
+    value：参数说明
+    required：是否必填
+@ApiResponses：用在请求的方法上，表示一组响应
+    @ApiResponse：用在@ApiResponses中，一般用于表达一个错误的响应信息
+        code：数字，例如400
+        message：信息，例如"请求参数没填好"
+        response：抛出异常的类
+@ApiModel：用于pojo类上，描述一个Model的信息
+（一般用在请求参数无法使用@ApiImplicitParam注解进行描述的时候，比如使用@RequestBody这样的场景）
+@ApiModelProperty：用在属性上，描述一个model的属性
+@ApiIgnore：注解类、参数、方法，注解后将不在Swagger UI中显示
+
+4.访问swagger页面
+springfox-swagger-ui
+http://localhost:8080/context-path/swagger-ui.html
+
+swagger-bootstrap-ui
+http://ip:port/context-path/doc.html
+
+5.一些其他配置
+如果Spring Boot项目中集成了Spring Security，接口会被拦截，需要在Spring Security的配置类中重写configure方法，
+对接口进行过滤一下
+@Override
+public void configure(WebSecurity web) throws Exception {
+    web.ignoring()
+            .antMatchers("/swagger-ui.html")
+            .antMatchers("/v2/**")
+            .antMatchers("/swagger-resources/**");
+}
+
+还有拦截器处理等
