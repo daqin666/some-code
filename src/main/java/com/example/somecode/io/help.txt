@@ -6,6 +6,19 @@
 3.是否调用flush()方法
     使用的是没有内部缓冲区的输出流，或者需要确保数据立即写入到目标设备中，那么在关闭流之前调用 flush() 方法是一个好的做法。
     对于使用了缓冲区的流，关闭流时会自动刷新缓冲区，因此在这种情况下可以省略显式调用 flush() 方法
+    flush() ： 刷新缓冲区，流对象可以继续使用。
+    close()： 先刷新缓冲区，然后通知系统关闭资源,流对象不可以再被使用。
+
+    只有字节流输出流FileOutputStream和序列化输出流ObjectOutputStream不需要flush()就能直接写入文件
+    FileWriter字符输出流，BufferedOutputStream缓冲字节输出流，BufferedWriter缓冲字符输出流，
+    OutputStreamWriter转换输出流都需要刷新flush方法才能写到文件上。
+
+    所以总结一下：如果是和Writer相关（内置缓冲区）或者是内置了缓冲数组的流都需要flush()这个过程才能写入文件
+
+    但是为了保险起见：以后只要涉及相关输出流，不论是字节流还是字符流，只要是OutputStream和Writer相关的，都加上flush()保险，
+    当然如果是直接close()就不用flush()了，但是保不齐以后增加代码会对数据进行操作，这个时候就容易出问题了
+
+
 
 =======介绍======
 1. 字节流（InputStream / OutputStream）

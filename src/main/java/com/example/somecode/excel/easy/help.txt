@@ -1,0 +1,21 @@
+1.介绍
+官网：https://easyexcel.opensource.alibaba.com/docs/current/
+
+默认处理的是07版本的xlsx文件，处理03版本的xls文件会报错，如果想要处理其他类型的文件可以配置excelType，如下：
+EasyExcel.write().excelType(ExcelTypeEnum.XLS/XLSX/CSV)
+EasyExcel.read().excelType(ExcelTypeEnum.XLS/XLSX/CSV)
+
+注意 simpleWrite在数据量不大的情况下可以使用（5000以内，具体也要看实际情况），数据量大参照 重复多次写入
+
+1.依赖
+<dependency>
+    <groupId>com.alibaba</groupId>
+    <artifactId>easyexcel</artifactId>
+    <version>3.2.1</version>
+</dependency>
+
+注意：该包中包含了poi的包，如果项目中存在poi的包，有可能导致 easyexcel 包中的poi包失效，这样可能出现版本不匹配的问题，
+从而导致 easyexcel 在使用的时候出现 NoSuchMethodException 异常，可以修改项目中的poi版本跟 easyexcel 中一致，或者删除
+项目中的poi包，直接使用 easyexcel 中的 poi 包也可以。
+
+2.
