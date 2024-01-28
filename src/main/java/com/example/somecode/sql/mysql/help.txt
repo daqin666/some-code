@@ -1,0 +1,165 @@
+sql中的下表似乎是以1开始，比如left(name,1)，substring(name,1)
+MySql 5.0 以上的版本：
+    UTF-8：一个汉字 = 3个字节，英文是一个字节
+    varchar(n) 表示n个字符，无论汉字和英文，MySql都能存入 n 个字符，仅实际字节长度有所区别。
+
+------------------------------------------------------------
+
+select * from table_name limit [offset，] rows
+offset：指定第一个返回记录行的偏移量（即从哪一行开始返回），注意：初始行的偏移量为0。
+rows：返回具体行数。
+select * from table_name limit 10; // 检索前10行记录
+select * from table_name limit 5 ，10; // 从第6行开始，检索10行记录，即：检索记录行 6-15
+select * from table limit 10 offset 5； // 同上，偏移量是5所以跳过前5条数据，然后再取出后面的10条数据。
+
+ROUND(x)函数返回最接近于参数x的整数，对x值进行四舍五入。
+ROUND(x,y)函数返回最接近于参数x的数，其值保留到小数点后面y位，若y为负值，则将保留x值到小数点左边y位。
+
+substring(str, pos)，即：substring(被截取字符串， 从第几位开始截取)
+substring(str, pos, length)，即：substring(被截取字符串，从第几位开始截取，截取长度)
+substring_index(str, delim, count)，即：substring_index(被截取字符串，关键字，关键字出现的次数)
+    1.截取第二个“.”之前的所有字符
+    SELECT SUBSTRING_INDEX('www.baidu.com', '.', 2);
+    结果为：www.baidu
+    2.截取倒数第二个“.”之后的所有字符
+    SELECT SUBSTRING_INDEX('www.baidu.com', '.', -2);
+    结果为：baidu.com
+    3.如果关键字不存在，则返回整个字符串
+    SELECT SUBSTRING_INDEX('www.baidu.com', 'hero', 1);
+    结果为：www.baidu.com
+
+LEFT(str,len)返回从字符串str最左边的len个字符，如果任一参数为null则返回null。
+RIGHT(str,len)返回从字符串str最右边的len个字符，如果任一参数为null则返回null。
+UPPER(expression)：这会将字符串表达式转换为大写。
+LOWER(expression)：这会将字符串表达式转换为小写。
+CONCAT(string1, string2, ...)：这会将两个或多个字符串连接成一个字符串。
+
+CHAR_LENGTH(str) 用于计算字符串中字符数,它返回字符串 str 的长度。
+LENGTH(str)  用于计算字符串中字节数
+以字符 '¥' 为例：CHAR_LENGTH() 返回结果为 1，而 LENGTH() 返回结果为 2，因为该字符串包含 2 个字节。
+
+TIMEDIFF(time_stamp,'2020-01-01 00:00:00')>0
+DATEDIFF(time_stamp,'2020-01-01 00:00:00')>=0
+YEAR(time_stamp)=2020
+DATE_SUB(date, INTERVAL expr unit)
+DATE_ADD(date, INTERVAL expr unit)
+    date是需要增加（减少）时间的日期，
+    expr是需要增加（减少）的时间数量，
+    unit是需要增加（减少）的时间单位（如天、小时、分钟等）。
+        MICROSECOND,SECOND,MINUTE,HOUR,DAY,WEEK,MONTH,QUARTER,YEAR
+    eg: DATE_ADD('2019-07-27',INTERVAL 29 DAY)
+
+
+JOIN USING是通过共同列来连接表。这种连接方式只需要指定一个共同列名作为连接条件，当然这个列名在连接的两个表中必须存在。
+
+使用 REGEXP 和 RLIKE操作符来进行正则表达式匹配
+    WHERE column_name REGEXP 'pattern';
+    WHERE column_name RLIKE 'pattern';
+
+IFNULL(a, b) 用于判断第一个表达式是否为 NULL，如果第一个值不为NULL就执行第一个值。第一个值为 NULL 则返回第二个参数的值
+    ifnull(sum(distance), 0)
+
+聚合函数GROUP_CONCAT()用指定分隔符连接字符串，多行变一列
+    group_concat([distinct] 要连接的字段 [order by 排序字段] [separator '分隔符'])
+    group_concat(key,'=',value Separator ',')
+
+
+比较函数
+lag() over(partition by ... order by ...)：取出向前第n行数据。　　
+lead() over(partition by ... order by ...)：取出向后第n行数据。
+
+    lag(arg1,arg2,arg3)、lead(arg1,arg2,arg3)
+    第一个参数是列名，
+    第二个参数是偏移的offset，不能为负数，
+    第三个参数是超出记录窗口时的默认值。
+
+
+四大排名函数:
+Row_number() 在排名是序号 连续 不重复，即使遇到表中的两个一样的数值亦是如此
+    如：12345
+    eg: select *,row_number() OVER(order by number ) as row_num from num
+    注意：在使用row_number() 实现分页时需要特别注意一点，over子句中的order by 要与SQL排序记录中的order by保持一致，
+    否则得到的序号可能不是连续的
+Rank() 函数会把要求排序的值相同的归为一组且每组序号一样，排序不会连续执行
+    如：12245
+    eg: select *,rank() OVER(order by number ) as row_num from num
+    注意： rank是MySQL的关键字，不能作为字段别名，非要使用得要加上``符号
+    如： DENSE_RANK() OVER ( ORDER BY Score desc ) `rank`
+Dense_rank() 排序是连续的，也会把相同的值分为一组且每组排序号一样
+    如：122345
+    eg: select *,dense_rank() OVER(order by number ) as row_num from num
+Ntile(group_num) 将所有记录分成group_num个组，每组序号一样
+    如：111222
+    eg: select *,ntile(2) OVER(order by number ) as row_num from num
+
+排名函数+窗口函数：
+    row_number() over(partition by 分组列 order by 排序列 desc)
+
+
+
+聚合函数加窗口函数：
+select id,avg(a.sales) over (partition by a.shopname) as avg_sales  -- 使用窗口函数计算每个shopname分组的平均销售额
+select id,avg(a.sales) over (partition by a.shopname ORDER BY a.sale_date) as avg_sales
+    注意：ORDER BY，增加了 order by 之后，会在窗口中按排序的字段，逐步聚合运算，为每一行聚合一个上面所有数据的新的聚合值
+    如：店铺A在2020年1月1日的平均值就是它本身，
+    在1月2日的平均值是1月1日与1月2日两天的平均值，
+    在1月3日的平均值是1月1日、1月2日、1月3日二天的平均值。
+    前面讲的over（）、partition by、order by
+    使用的聚合函数都是求平均值运算，当然也可以使用其他聚合函数，
+
+
+窗口函数：
+[你要的操作] OVER ( PARTITION BY  <用于分组的列名>
+                    ORDER BY <按序叠加的列名>
+                    ROWS|RANGE <窗口滑动的数据范围> )
+ROWS按行数限定
+RANGE按数据范围限定
+order by表达式的类型为时间（date、datetime）时，必须使用Interval
+RANGE和PRECEDING/FOLLOWING一起使用时，order by的表达式必须为数字或者时间差
+
+
+当前 - current row
+之前的 - preceding
+之后的 - following
+无界限 - unbounded
+表示从前面的起点 - unbounded preceding
+表示到后面的终点 - unbounded following
+
+取当前行和前五行：ROWS between 5 preceding and current row --共6行
+取当前行和后五行：ROWS between current row and 5 following --共6行
+取前五行和后五行：ROWS between 5 preceding and 5 following --共11行
+取当前行和前六行：ROWS 6 preceding（等价于between...and current row） --共7行
+这一天和前面6天：RANGE between interval 6 day preceding and current row --共7天
+这一天和前面6天：RANGE interval 6 day preceding（等价于between...and current row） --共7天
+字段值落在当前值-100到+200的区间：RANGE between 100 preceding and 200 following  --共301个数值
+
+
+
+===================================================================================
+
+sql算法：
+eg:
+CREATE FUNCTION getNthHighestSalary(N INT) RETURNS INT
+BEGIN
+DECLARE M INT;
+    SET M = N-1;
+  RETURN (
+      SELECT DISTINCT salary
+      FROM Employee
+      ORDER BY salary DESC
+      LIMIT M, 1
+  );
+END
+
+===================================================================================
+
+自定义变量：
+SELECT person_name, @pre := @pre + weight AS weight
+FROM Queue, (SELECT @pre := 0) tmp
+ORDER BY turn
+
+SELECT id, @aa := @aa + value AS value2
+FROM t_test, (SELECT @aa := 0) tmp
+ORDER BY id
+
+===================================================================================

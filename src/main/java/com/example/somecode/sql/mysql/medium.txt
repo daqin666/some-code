@@ -1,0 +1,126 @@
+# 选出每个售出过的产品 第一年 销售的 产品 id、年份、数量 和 价格。
+Sales 表：
++---------+------------+------+----------+-------+
+| sale_id | product_id | year | quantity | price |
++---------+------------+------+----------+-------+
+| 1       | 100        | 2008 | 10       | 5000  |
+| 2       | 100        | 2009 | 12       | 5000  |
+| 7       | 200        | 2011 | 15       | 9000  |
++---------+------------+------+----------+-------+
+方式一：
+SELECT DISTINCT product_id,
+       year AS first_year,
+       quantity, price
+FROM Sales
+WHERE (product_id, year) IN (
+    SELECT product_id, MIN(year)
+    FROM Sales
+    GROUP BY product_id )
+;
+方式二：
+SELECT product_id, year AS first_year,
+       quantity, price
+FROM (
+    SELECT  *,
+        RANK() OVER(PARTITION BY product_id ORDER BY year) AS rr
+    FROM Sales
+) TT
+WHERE rr = 1
+
+# 报告在首次登录的第二天再次登录的玩家的 比率，四舍五入到小数点后两位
+Activity table:
++-----------+-----------+------------+--------------+
+| player_id | device_id | event_date | games_played |
++-----------+-----------+------------+--------------+
+| 1         | 2         | 2016-03-01 | 5            |
+| 1         | 2         | 2016-03-02 | 6            |
+| 2         | 3         | 2017-06-25 | 1            |
+| 3         | 1         | 2016-03-02 | 0            |
+| 3         | 4         | 2018-07-03 | 5            |
++-----------+-----------+------------+--------------+
+
+方式一：
+select IFNULL(round(count(distinct(Result.player_id)) / count(distinct(Activity.player_id)), 2), 0) as fraction
+from (
+  select Activity.player_id as player_id
+  from (
+    select player_id, DATE_ADD(MIN(event_date), INTERVAL 1 DAY) as second_date
+    from Activity
+    group by player_id
+  ) as Expected, Activity
+  where Activity.event_date = Expected.second_date and Activity.player_id = Expected.player_id
+) as Result, Activity
+
+方式二：
+select round(avg(a.event_date is not null), 2) fraction
+from
+    (select player_id, min(event_date) as login
+    from activity
+    group by player_id) p
+left join activity a
+on p.player_id=a.player_id and datediff(a.event_date, p.login)=1
+
+注释：avg(a.event_date is not null) = avg(if(a.event_date is not null,1,0))
+= sum(if(a.event_date is not null, 1, 0))/count(*)
+
+
+# 查询 Employee 表中第 n 高的工资。如果没有第 n 个最高工资，查询结果应该为 null 。
+CREATE FUNCTION getNthHighestSalary(N INT) RETURNS INT
+BEGIN
+DECLARE M INT;
+    SET M = N-1;
+  RETURN (
+      SELECT DISTINCT salary
+      FROM Employee
+      ORDER BY salary DESC
+      LIMIT M, 1
+  );
+END
+
+
+# 最后一个能进入巴士的人，重量限制1000，
+方式一：
+    SELECT a.person_name
+    FROM Queue a, Queue b
+    WHERE a.turn >= b.turn
+    GROUP BY a.person_id HAVING SUM(b.weight) <= 1000
+    ORDER BY a.turn DESC
+    LIMIT 1
+
+方式二：
+    SELECT a.person_name
+    FROM (
+        SELECT person_name, @pre := @pre + weight AS weight
+        FROM Queue, (SELECT @pre := 0) tmp
+        ORDER BY turn
+    ) a
+    WHERE a.weight <= 1000
+    ORDER BY a.weight DESC
+    LIMIT 1
+
+方式三：
+    select person_name
+    from (
+        select *,sum(weight) over(order by turn) as sumWeight
+        from Queue
+    ) as t
+    where sumWeight <= 1000
+    order by sumWeight desc
+    limit 1
+
+
+# 计算以 7 天（某日期 + 该日期前的 6 天）为一个时间段的顾客消费平均值
+SELECT DISTINCT visited_on,
+       sum_amount AS amount,
+       ROUND(sum_amount/7, 2) AS average_amount
+FROM (
+    SELECT visited_on, SUM(amount) OVER ( ORDER BY visited_on RANGE interval 6 day preceding  ) AS sum_amount
+    FROM Customer) t
+-- 最后手动地从第7天开始
+WHERE DATEDIFF(visited_on, (SELECT MIN(visited_on) FROM Customer)) >= 6
+
+# 找出每个用户的注册日期和在 2019 年作为买家的订单总数。
+select user_id as buyer_id , join_date,
+    count(if (year(order_date) = 2019, 1, null)) as orders_in_2019
+from users left join orders on users.user_id = orders.buyer_id
+group by user_id;

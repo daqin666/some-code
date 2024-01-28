@@ -1,0 +1,181 @@
+# 修复名字，使得只有第一个字符是大写的，其余都是小写的
+select user_id,
+CONCAT(Upper(left(name,1)),Lower(substring(name,2))) name
+from users
+order by user_id
+
+========================================================================
+
+# 对于每一个 date_id 和 make_name，找出 不同 的 lead_id 以及 不同 的 partner_id 的数量
+SELECT
+    date_id,
+    make_name,
+    COUNT(DISTINCT lead_id) AS unique_leads,
+    COUNT(DISTINCT partner_id) AS unique_partners
+FROM
+    DailySales
+GROUP BY date_id, make_name;
+
+========================================================================
+
+# 每个产品在不同商店的价格
+Products table:
++------------+--------+--------+--------+
+| product_id | store1 | store2 | store3 |
++------------+--------+--------+--------+
+| 0          | 95     | 100    | 105    |
+| 1          | 70     | null   | 80     |
++------------+--------+--------+--------+
+# 列转行
+SELECT product_id, 'store1' store, store1 price FROM products WHERE store1 IS NOT NULL
+UNION
+SELECT product_id, 'store2' store, store2 price FROM products WHERE store2 IS NOT NULL
+UNION
+SELECT product_id, 'store3' store, store3 price FROM products WHERE store3 IS NOT NULL;
+
+# 行转列
+SELECT
+  product_id,
+  SUM(IF(store = 'store1', price, NULL)) 'store1',
+  SUM(IF(store = 'store2', price, NULL)) 'store2',
+  SUM(IF(store = 'store3', price, NULL)) 'store3'
+FROM
+  Products1
+GROUP BY product_id ;
+--或者
+SELECT Name,
+       max(CASE WHEN Subject='语文' THEN Result ELSE 0 END) AS 语文,
+       max(CASE WHEN Subject='数学' THEN Result ELSE 0 END) AS 数学,
+       max(CASE WHEN Subject='物理' THEN Result ELSE 0 END) AS 物理
+group by name
+FROM cj;
+
+========================================================================
+
+# 2020年最后一次登录
+SELECT user_id, MAX(time_stamp) as last_stamp
+FROM Logins
+WHERE TIMEDIFF(time_stamp,'2020-01-01 00:00:00')>0
+    and TIMEDIFF(time_stamp,'2020-12-31 23:59:59') <0
+GROUP BY user_id
+
+注意：由于是比较日期，如果存在当天的数据，需用等号。
+SELECT user_id, MAX(time_stamp) as last_stamp
+FROM Logins
+WHERE DATEDIFF(time_stamp,'2020-01-01 00:00:00')>=0
+    and DATEDIFF(time_stamp,'2020-12-31 23:59:59') <=0
+GROUP BY user_id
+
+YEAR-直接用年
+SELECT user_id, MAX(time_stamp) as last_stamp
+FROM Logins
+WHERE YEAR(time_stamp)=2020
+GROUP BY user_id
+
+========================================================================
+
+# 查询近30天活跃用户数
+SELECT
+    activity_date AS day,
+    COUNT(distinct user_id) AS active_users
+FROM
+    Activity
+WHERE
+    # activity_date BETWEEN DATE_ADD('2019-07-27',INTERVAL -29 day) and '2019-07-27'
+    activity_date BETWEEN DATE_SUB('2019-07-27',INTERVAL 29 DAY) AND '2019-07-27'
+GROUP BY
+    activity_date
+
+========================================================================
+
+# id 是 奇数 并且他的名字不是以 'M' 开头，那么他的奖金是他工资的 100% ，否则奖金为 0
+select
+    employee_id,
+    if(
+        employee_id % 2 = 1 AND name NOT REGEXP '^M',
+        # employee_id&1 and name regexp '^[^M]',
+        # employee_id%2=1 and name not like 'M%',
+        # MOD(employee_id,2)!=0 AND LEFT(name,1)!='M',
+        salary,
+        0
+    ) as bonus
+from employees
+order by employee_id;
+
+========================================================================
+
+输入：
+Activities 表：
++------------+-------------+
+| sell_date  | product     |
++------------+-------------+
+| 2020-05-30 | Headphone   |
+| 2020-06-01 | Pencil      |
+| 2020-06-02 | Mask        |
+| 2020-05-30 | Basketball  |
+| 2020-06-01 | Bible       |
+| 2020-06-02 | Mask        |
+| 2020-05-30 | T-Shirt     |
++------------+-------------+
+输出：
++------------+----------+------------------------------+
+| sell_date  | num_sold | products                     |
++------------+----------+------------------------------+
+| 2020-05-30 | 3        | Basketball,Headphone,T-shirt |
+| 2020-06-01 | 2        | Bible,Pencil                 |
+| 2020-06-02 | 1        | Mask                         |
++------------+----------+------------------------------+
+
+select
+    sell_date,
+    count(distinct product) num_sold,
+    group_concat(
+        distinct product
+        order by product
+        separator ','
+    ) products
+from
+    Activities
+group by sell_date
+order by sell_date
+
+========================================================================
+
+# 关联更新
+UPDATE unit u
+JOIN unit_fix uf ON u.unit_id = uf.unit_id
+SET u.price = uf.price,
+	u.fix_flag = 1
+WHERE
+	uf.tender_id IS NOT NULL;
+
+--
+
+UPDATE T1, T2,
+[INNER JOIN | LEFT JOIN] T1 ON T1.C1 = T2. C1
+SET T1.C2 = T2.C2,
+    T2.C3 = expr
+WHERE condition
+首先，在UPDATE子句之后，指定主表(T1)和希望主表连接表(T2)。 请注意，必须在UPDATE子句之后至少指定一个表。UPDATE子句后未指定的表中的数据未更新。
+第二，指定一种要使用的连接，即 INNER JOIN 或 LEFT JOIN 和 ON连接条件 。JOIN子句必须出现在UPDATE子句之后。
+第三，要为要更新的T1和/或T2表中的列分配新值 。SET
+第四，WHERE子句中的条件用于指定要更新的行，例如什么值不为空之类。
+
+UPDATE T1, T2
+SET T1.c2 = T2.c2,
+	T1.c3 = T2.c3
+WHERE T1.id= T2.id AND condition
+在这个UPDATE交叉更新语句与具有隐式INNER JOIN子句的UPDATE JOIN工作相同。也就是等同于：
+UPDATE T1
+INNER JOIN T2 ON T1.id = T2.id
+SET T1.C2 = T2.C2,
+	T1.C3 = T2.C3
+WHERE condition
+
+如果你发现无法update join，试下双表update语句
+update unit u,unit_fix uf
+set u.price=uf.price,u.bid_unit=uf.bid_unit,u.fix_flag=2,u.business_status=uf.business_status
+where u.unit_id=uf.unit_id;
+
+========================================================================
+
