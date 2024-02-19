@@ -6,7 +6,7 @@ public class Simple {
 
     public static void main(String[] args) {
         Simple wb = new Simple();
-        wb.test13();
+        wb.test27();
     }
 
     /**
@@ -767,5 +767,49 @@ public class Simple {
             }
         }
         return -1;
+    }
+
+    /**
+     * 奖牌排名
+     * 根据金银铜牌，依次比较，金牌最大的排前面，想同则比较银牌，再相同比较铜牌
+     * 如果都相同，则按国家字符串的字典序排序，最终输出国家名称排名
+     * 如下，第一行表示国家数量，第二行开始，第一个字符串表示国家，后续分别为金银铜牌的个数
+     * 3
+     * China 32 22 12
+     * England 31 22 11
+     * France 31 22 12
+     */
+    public void test27() {
+        Scanner scanner = new Scanner(System.in);
+        Queue<String[]> queue = new PriorityQueue<>(new Comparator<String[]>() {
+            @Override
+            public int compare(String[] o1, String[] o2) {
+                for (int i = 1; i < o1.length; i++) {
+                    if (!o1[i].equals(o2[i])) {
+//                        return o2[i].compareTo(o1[i]); // 存在一定问题，数字比较还是转int比较好
+                        return Integer.parseInt(o2[i]) - Integer.parseInt(o1[i]);
+                    }
+                }
+                return o1[0].compareTo(o2[0]);
+            }
+        });
+
+        int n = scanner.nextInt();
+        scanner.nextLine();
+        for (int i = 0; i < n; i++) {
+            String str = scanner.nextLine();
+            queue.offer(str.split(" "));
+        }
+
+        // 存在问题，在 PriorityQueue 中，是以数组形式保存的最大堆或者最小堆的数据
+        // 所以这里foreach输出顺序并不是堆的实际顺序，得注意，输出堆数据还是得使用堆方法一个一个弹出
+        queue.forEach(x -> System.out.println(x[0]));
+
+        System.out.println();
+
+        while (!queue.isEmpty()) {
+            System.out.println(queue.poll()[0]);
+        }
+
     }
 }

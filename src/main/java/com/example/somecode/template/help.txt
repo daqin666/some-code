@@ -1,0 +1,285 @@
+=============get=============
+1.1 get请求返回基本类型
+@GetMapping("/name")
+public String getName(@RequestParam("id") Integer id) {
+    String url = "http://localhost:8080/demo/name/mock?id=" + id;
+    return restTemplate.exchange(url, HttpMethod.GET, null, String.class).getBody();
+}
+
+@GetMapping("/name/mock")
+public String mockName(@RequestParam("id") Integer id) {
+    return "天罡" + id;
+}
+
+1.2 返回自定义对象类型
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class UserDto implements Serializable {
+    private Integer id;
+    private String name;
+    private Integer age;
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private Date birthday;
+}
+
+@GetMapping("/user")
+public UserDto getUser(@RequestParam("id") Integer id) {
+    String url = "http://localhost:8080/demo/user/mock?id=" + id;
+    return restTemplate.exchange(url, HttpMethod.GET, null, UserDto.class).getBody();
+}
+
+@GetMapping("/user/mock")
+public UserDto mockUser(@RequestParam("id") Integer id) {
+    return UserDto.builder().id(id)
+            .name("天罡" + id)
+            .age(id + 18)
+            .birthday(new Date()).build();
+}
+
+
+1.3 返回List类型
+@GetMapping("/user/list")
+public List<UserDto> getUserList(@RequestParam("name") String name) {
+    String url = "http://localhost:8080/demo/user/list/mock?name=" + name;
+    ParameterizedTypeReference<List<UserDto>> responseBodyType = new ParameterizedTypeReference<List<UserDto>>() {};
+    return restTemplate.exchange(url, HttpMethod.GET, null, responseBodyType).getBody();
+}
+
+@GetMapping("/user/list/mock")
+public List<UserDto> mockUserList(@RequestParam("name") String name) {
+    List<UserDto> list = new ArrayList<>();
+    for (int i = 1; i < 3; i++) {
+        list.add(UserDto.builder().id(i)
+                .name(name + i)
+                .age(i + 10)
+                .birthday(new Date()).build());
+    }
+    return list;
+}
+
+1.4 返回Map 类型
+@GetMapping("/user/map")
+public Map<String, Object> getUserMap(@RequestParam(value = "type", required = true) Integer type, @RequestParam("key") String key) {
+    String url = "http://localhost:8080/demo/user/map/mock?type=" + type + "&key=" + key;
+    ParameterizedTypeReference<Map<String, Object>> responseBodyType = new ParameterizedTypeReference<Map<String, Object>>() {};
+    return restTemplate.exchange(url, HttpMethod.GET, null, responseBodyType).getBody();
+}
+
+@GetMapping("/user/map/mock")
+public Map<String, Object> mockUserMap(@RequestParam(value = "type", required = true) Integer type, @RequestParam("key") String key) {
+    Map<String, Object> map = new HashMap<>();
+    if (type.equals(1)) {
+        map.put("id", 1);
+        map.put("name" + type, "hello" + key);
+    } else {
+        map.put("id", 2);
+        map.put("name" + type, "hello" + key);
+    }
+    return map;
+}
+
+1.5 返回自定义泛型类型
+@Data
+public class Result<T extends Serializable> implements Serializable {
+    private boolean success;
+    private String code;
+    private String message;
+    private T data;
+
+    public static <T extends Serializable> Result<T> success(String code, String message, T data) {
+        Result<T> result = new Result<>();
+        result.setCode(code);
+        result.setMessage(message);
+        result.setData(data);
+        result.setSuccess(true);
+        return result;
+    }
+
+    public static <T extends Serializable> Result<T> success(T data) {
+        return success("200", "成功", data);
+    }
+
+    public static <T extends Serializable> Result<T> fail(String code, String message) {
+        Result<T> result = new Result<>();
+        result.setCode(code);
+        result.setMessage(message);
+        result.setSuccess(false);
+        return result;
+    }
+}
+
+
+@GetMapping("/user/result")
+public Result<UserDto> getUserResult(@RequestParam("id") Integer id) {
+    String url = "http://localhost:8080/demo/user/result/mock?id=" + id;
+    ParameterizedTypeReference<Result<UserDto>> responseBodyType = new ParameterizedTypeReference<Result<UserDto>>() {};
+    return restTemplate.exchange(url, HttpMethod.GET, null, responseBodyType).getBody();
+}
+
+
+@GetMapping("/user/result/mock")
+public Result<UserDto> mockUserResult(@RequestParam("id") Integer id) {
+    if (id == null || id <= 0) {
+        return Result.fail("400", "id不合法!");
+    }
+    if (id % 2 == 0) {
+        // 这里只是模拟异常情况
+        return Result.fail("500", "操作失败,访问量太大了!");
+    }
+    UserDto userDto = UserDto.builder().id(id)
+            .name("天罡" + id)
+            .age(id + 18)
+            .birthday(new Date()).build();
+    return Result.success("200", "成功", userDto);
+}
+
+
+=============post=============
+
+2.1 传header+body返回对象类型
+通过@RequestBody传参，[可选]指定header，获取用户信息
+@GetMapping("/user/body")
+public UserDto postUser(@RequestParam("id") Integer id) {
+    String url = "http://localhost:8080/demo/user/body/mock";
+    UserDto body = UserDto.builder().id(id)
+            .name("body" + id)
+            .age(id + 18)
+            .birthday(new Date()).build();
+    // header根据实际情况设置，没有就空着
+    HttpHeaders headers = new HttpHeaders();
+    headers.add("AccessKey", "自定义的API访问key");
+    headers.add("Content-Type", "application/json");
+    HttpEntity<?> requestEntity = new HttpEntity<>(body, headers);
+    return restTemplate.exchange(url, HttpMethod.POST, requestEntity, UserDto.class).getBody();
+}
+
+@PostMapping("/user/body/mock")
+public UserDto mockPostUser(@RequestBody UserDto userParam) {
+    return userParam;
+}
+
+2.2 传header+body返回自定义泛型类型
+通过@RequestBody传参，[可选]指定header，获取自定义包装类型的用户信息
+
+@GetMapping("/user/result/body")
+public Result<UserDto> postUserResult(@RequestParam("id") Integer id) {
+    String url = "http://localhost:8080/demo/user/result/body/mock";
+    UserDto body = UserDto.builder().id(id)
+            .name("body" + id)
+            .age(id + 10)
+            .birthday(new Date()).build();
+    // header根据实际情况设置，没有就空着
+    HttpHeaders headers = new HttpHeaders();
+    headers.add("AccessKey", "自定义的API访问key");
+    headers.add("Content-Type", "application/json");
+    HttpEntity<?> requestEntity = new HttpEntity<>(body, headers);
+    ParameterizedTypeReference<Result<UserDto>> responseBodyType = new ParameterizedTypeReference<Result<UserDto>>(){};
+    return restTemplate.exchange(url, HttpMethod.POST, requestEntity, responseBodyType).getBody();
+}
+
+@PostMapping("/user/result/body/mock")
+    public Result<UserDto> mockPostUserResult(@RequestBody UserDto userParam) {
+        return Result.success("200", "成功", userParam);
+    }
+
+=============异常情况处理=============
+
+上面例子均未做异常处理，在这项目中使用难免不够健壮，所以我们通常会处理两种异常情况：
+
+本身抛出的 throws RestClientException
+返回的ResponseEntity的Code不等于200
+
+3.1 普通类型：
+public <T> T exchangeForEntity(HttpMethod httpMethod, String url, HttpHeaders headers, Object body
+			, Class<T> responseType) {
+    HttpEntity<?> requestEntity = null;
+    if (headers != null || body != null) {
+        requestEntity = new HttpEntity<>(body, headers);
+    }
+    try {
+        ResponseEntity<T> responseEntity = restTemplate.exchange(url, httpMethod, requestEntity, responseType);
+        if (responseEntity.getStatusCode().equals(HttpStatus.OK)) {
+            return responseEntity.getBody();
+        } else {
+            // 处理Code不等于200的情况, 这里只简单打印，你需要根据你们项目的情况修改合适的处理方式
+            System.out.println("返回结果不等于200：code=" + responseEntity.getStatusCode().value()
+                    + " reason=" + responseEntity.getStatusCode().getReasonPhrase());
+        }
+    } catch (RestClientException e) {
+        // 处理RestClientException
+        e.printStackTrace();
+    }
+    return null;
+}
+
+
+3.2 泛型类型：
+只需要将普通类型的入参Class<T>改成 ParameterizedTypeReference<T>
+
+public <T> T exchangeForWarpEntity(HttpMethod httpMethod, String url, HttpHeaders headers, Object body
+				, ParameterizedTypeReference<T> responseBodyType) {
+    HttpEntity<?> requestEntity = null;
+    if (headers != null || body != null) {
+        requestEntity = new HttpEntity<>(body, headers);
+    }
+    try {
+        ResponseEntity<T> responseEntity = restTemplate.exchange(url, httpMethod, requestEntity, responseBodyType);
+        if (responseEntity.getStatusCode().equals(HttpStatus.OK)) {
+            return responseEntity.getBody();
+        } else {
+            // 处理Code不等于200的情况, 这里只简单打印，你需要根据你们项目的情况修改合适的处理方式
+            System.out.println("返回结果不等于200：code=" + responseEntity.getStatusCode().value()
+                    + " reason=" + responseEntity.getStatusCode().getReasonPhrase());
+        }
+    } catch (RestClientException e) {
+        // 处理RestClientException, 这里只简单打印
+        e.printStackTrace();
+    }
+    return null;
+}
+
+如果觉得这样重复代码太多了，那就在内部实现一个方法，对外开放两个方法即可，内部实现的方法类似这样，具体不做赘述！
+
+private <T> T exchangeInternal(HttpMethod httpMethod, String url, HttpHeaders headers, Object body
+				, Class<T> responseType1, ParameterizedTypeReference<T> responseType2)
+
+
+=============RestTemplate配置@Bean=============
+
+@Configuration
+public class RestTemplateConfig {
+    @Bean
+    public RestTemplate restTemplate(ClientHttpRequestFactory clientHttpRequestFactory) {
+        RestTemplate restTemplate = new RestTemplate(clientHttpRequestFactory);
+        restTemplate.getMessageConverters()
+                .stream()
+                .filter(MappingJackson2HttpMessageConverter.class::isInstance)
+                .map(MappingJackson2HttpMessageConverter.class::cast)
+                .findFirst()
+                .map(MappingJackson2HttpMessageConverter::getObjectMapper)
+                .ifPresent(objectMapper -> {
+                    // 去掉默认的时间戳格式
+                    objectMapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
+                    // 设置为东八区
+                    objectMapper.setTimeZone(TimeZone.getTimeZone("GMT+8"));
+                    // 序列化时，日期的统一格式
+                    objectMapper.setDateFormat(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"));
+                    // 忽略大小写
+                    objectMapper.configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, true);
+                });
+
+        return restTemplate;
+    }
+
+    @Bean
+    public ClientHttpRequestFactory clientHttpRequestFactory(){
+        // 如果使用okHttpClient需要引入jar包：okhttp
+        // OkHttp3ClientHttpRequestFactory factory = new OkHttp3ClientHttpRequestFactory();
+        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout(15000);
+        factory.setReadTimeout(30000);
+        return factory;
+    }
+}
