@@ -1,0 +1,41 @@
+https://blog.csdn.net/weixin_55850954/article/details/130680519
+
+1、依赖
+<dependency>
+    <groupId>com.github.ben-manes.caffeine</groupId>
+    <artifactId>caffeine</artifactId>
+</dependency>
+
+2、常用配置参数
+expireAfterWrite：写入间隔多久淘汰；
+expireAfterAccess：最后访问后间隔多久淘汰；
+refreshAfterWrite：写入后间隔多久刷新，该刷新是基于访问被动触发的，支持异步刷新和同步刷新，如果和 expireAfterWrite 组合使用，能够保证即使该缓存访问不到、也能在固定时间间隔后被淘汰，否则如果单独使用容易造成OOM；
+expireAfter：自定义淘汰策略，该策略下 Caffeine 通过时间轮算法来实现不同key 的不同过期时间；
+maximumSize：缓存 key 的最大个数；
+weakKeys：key设置为弱引用，在 GC 时可以直接淘汰；
+weakValues：value设置为弱引用，在 GC 时可以直接淘汰；
+softValues：value设置为软引用，在内存溢出前可以直接淘汰；
+executor：选择自定义的线程池，默认的线程池实现是 ForkJoinPool.commonPool()；
+maximumWeight：设置缓存最大权重；
+weigher：设置具体key权重；
+recordStats：缓存的统计数据，比如命中率等；
+removalListener：缓存淘汰监听器；
+writer：缓存写入、更新、淘汰的监听器。
+
+
+3、常用方法
+put(Object key,Object value): 添加entry到缓存中
+getIfPresent(Object key): 获取value值，如果entry不存在，返回null
+invalidate(Object key): 删除entry
+asMap(): 将cache以map的形式进行操作
+asMap().put()
+asMap().get()
+
+
+4、Caffeine的四种类型的加载策略
+3.1 Manual手动加载
+3.2 loading
+3.3 Asynchronous Manual异步手动
+3.4 异步自动
+
+5. 配置监听器

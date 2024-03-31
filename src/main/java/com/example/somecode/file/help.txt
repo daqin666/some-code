@@ -16,6 +16,7 @@ private static final String PATH_SYSTEM_TEMP = System.getProperty("java.io.tmpdi
 // 获取当前服务的target/classes文件路径
 private static final String PATH_PROJECT_TARGET = Thread.currentThread().getContextClassLoader().getResource("").getPath();
 
+// 应对文件名、文件后缀、包里面的文件名、文件后缀、文件大小等等做一些校验
 
 1.File类
 

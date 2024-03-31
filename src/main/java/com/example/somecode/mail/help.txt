@@ -1,0 +1,50 @@
+1、依赖
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-mail</artifactId>
+</dependency>
+
+2、添加邮箱配置参数
+如其他自动化配置模块一样，在完成了依赖引入之后，只需要在application.properties中配置相应的属性内容。
+下面我们以QQ邮箱为例，注意替换成自己的发件邮箱和授权码，关于如何获取授权码请点击这里：获取QQ邮箱授权码
+
+#邮箱配置
+#平台地址，这里用的是qq邮箱，使用其他邮箱请更换
+spring.mail.host=smtp.qq.com
+#端口号
+spring.mail.port=XXX
+#发送邮件的邮箱地址：改成自己的邮箱
+spring.mail.username=xxxxxxxxxxx
+#发送短信后它给你的授权码 填写到这里
+spring.mail.password=xxxxxxxxxxxx
+#与发件邮箱一致
+spring.mail.from=xxxxxxxxxxx
+
+3、调用JavaMailSender接口发送邮件
+由于Spring Boot的starter模块提供了自动化配置，所以在引入了spring-boot-starter-mail依赖之后，
+会根据配置文件中的内容去创建JavaMailSender实例，因此我们可以直接在需要使用的地方直接@Autowired来引入邮件发送对象
+
+4、常见的Web网站注册，邮箱点击链接验证激活如何实现？
+Java实现用户注册邮箱激活验证
+功能：通过邮箱注册账号，注册成功会向邮箱发送激活邮件。提示用户登录邮箱进行账户激活，方可使用账号。
+流程：本质上就是向user表里新增一条数据，user表中应有一个code字段存放随机串。code在添加用户时随机生成（uuid），
+发送邮件时把code值带到邮件链接中用于查找唯一账户，然后判断用户状态，进行激活。
+
+5、存在失效邮箱地址导致JavaMailSender群发失败
+问题描述
+进行邮件群发，使用的是SpringBoot的org.springframework.mail.javamail.JavaMailSender。
+在提测过程中发现，如果待发送的邮件地址列表中存在一个无效的地址
+【该地址是一个合法的邮件地址，但是是无效地址，如：BingDwenDwen@163.com，它是一个合法的邮件地址，但却是无效的地址】，
+则会导致所有邮件发送失败。
+
+报错异常和问题分析
+异常：org.springframework.mail.MailSendException: Failed messages: javax.mail.SendFailedException: Invalid Addresses
+分析：可能是收件人或抄送人列表存在无效的地址
+坑：不能直接catch到SendFailedException
+解决方案
+遍历异常，提取无效地址后过滤原地址列表再次发送
+
+
+6、日志没有报任何异常返回发送成功，收件方却没有实际收到邮件
+你可以登录的你的发送账号，查看邮件系统退信原因。试着检查你公司的企业邮箱服务器的反垃圾邮件规则是否拦截了该邮件。
+比如你的发送内容是一段小说,就容易被检测为垃圾邮件被拒绝投递

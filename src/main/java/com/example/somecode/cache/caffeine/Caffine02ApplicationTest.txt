@@ -1,0 +1,62 @@
+import com.young.entity.User;
+import com.young.service.UserService;
+import lombok.extern.slf4j.Slf4j;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+
+@SpringBootTest
+@Slf4j
+public class Caffine02ApplicationTest {
+    @Autowired
+    private UserService userService;
+
+    @Resource
+    @Qualifier(value = "manualCaffeineCache")
+    private Cache<String,String> manualCaffineCache;
+
+    @Test
+    public void testCache(){
+        //获取缓存
+        User user = userService.getUserById(1);
+        log.info("第一次从数据库获取缓存：{}",user);
+        user=userService.getUserById(1);
+        log.info("第二次从缓存中获取：{}",user);
+        //过期时间为10秒，我们10秒后再获取
+        try {
+            Thread.sleep(10000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        user=userService.getUserById(1);
+        log.info("10秒后再次获取user：{}",user);
+    }
+
+    @Test
+        public void testManualCaffeineCache(){
+            //将数据放入缓存
+            manualCaffineCache.put("The best language","java");
+            //获取key对应的value，如果不存在，返回null
+            String the_best_language = manualCaffineCache.getIfPresent("The best language");
+            System.out.println(the_best_language);
+            //删除entry
+            manualCaffineCache.invalidate("The best language");
+            the_best_language= manualCaffineCache.getIfPresent("The best language");
+            System.out.println(the_best_language);
+
+            //以map的形式进行增删改查==================
+            manualCaffineCache.asMap().put("best","java");
+            manualCaffineCache.asMap().put("best1","SpringBoot");
+            String best = manualCaffineCache.asMap().get("best");
+            String best1 = manualCaffineCache.asMap().get("best1");
+            System.out.println("best:"+best);
+            System.out.println("best1:"+best1);
+            //删除entry
+            manualCaffineCache.asMap().remove("best");
+            manualCaffineCache.asMap().remove("best1");
+            best = manualCaffineCache.asMap().get("best");
+            best1 = manualCaffineCache.asMap().get("best1");
+            System.out.println("best:"+best);
+            System.out.println("best1:"+best1);
+        }
+}

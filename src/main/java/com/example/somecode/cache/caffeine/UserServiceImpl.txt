@@ -1,0 +1,63 @@
+import com.github.benmanes.caffeine.cache.Cache;
+import com.young.entity.User;
+import com.young.mapper.UserMapper;
+import com.young.service.UserService;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import javax.annotation.Resource;
+
+@Service
+@Slf4j
+public class UserServiceImpl implements UserService {
+    @Autowired
+    private UserMapper userMapper;
+    @Resource
+    private Cache<String,Object>caffeineCache;
+
+    @Override
+    public Boolean saveUser(User user) {
+        return userMapper.insert(user)>0;
+    }
+
+    @Override
+    public Boolean updateUser(User user) {
+        if (user.getId()==null){
+            return false;
+        }
+        if(userMapper.updateById(user)>0){
+            //删除缓存
+            caffeineCache.asMap().remove(user.getId()+"");
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public Boolean deleteUserById(Integer id) {
+        if (userMapper.deleteById(id)>0){
+            //删除缓存
+            caffeineCache.asMap().remove(id+"");
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public User getUserById(Integer id) {
+        User user=(User)caffeineCache.asMap().get(id+"");
+        if (user!=null){
+            log.info("从缓存中获取==============");
+            return user;
+        }
+        log.info("从数据库中获取===============");
+        user=userMapper.selectById(id);
+        if (user==null){
+            log.info("数据为空===========");
+            return null;
+        }
+        caffeineCache.put(id+"",user);
+        return user;
+    }
+}
